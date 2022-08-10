@@ -10,18 +10,10 @@ import (
 	"github.com/hetznercloud/hcloud-go/hcloud"
 )
 
-func defineParameters() (*hcloud.Client, hcloud.SSHKeyCreateOpts) {
-	Name := os.Args[2]
-	PublicKey := os.Args[3] //perhaps creating an ssh publickey in go?
-	Labels := make(map[string]string)
+func createKey(name, publicKey string) {
+	labels := make(map[string]string)
 	client := hcloud.NewClient(hcloud.WithToken(os.Getenv("API_TOKEN")))
-	SSHKeyCreateOpts := hcloud.SSHKeyCreateOpts{Name: Name, PublicKey: PublicKey, Labels: Labels}
-
-	return client, SSHKeyCreateOpts
-}
-
-func createKey() {
-	client, SSHKeyCreateOpts := defineParameters()                                   //set parameters for SSHKey
+	SSHKeyCreateOpts := hcloud.SSHKeyCreateOpts{Name: name, PublicKey: publicKey, Labels: labels}
 	SSHKey, _, error := client.SSHKey.Create(context.Background(), SSHKeyCreateOpts) //create SSHKey
 	if error != nil {
 		fmt.Printf("%v", error) //Print out SSHKey
@@ -30,8 +22,7 @@ func createKey() {
 
 }
 
-func deleteKey() {
-	name := os.Args[2]
+func deleteKey(name string) {
 	fmt.Printf("Api Key: '%s', name: '%s'\n", os.Getenv("API_TOKEN"), name)
 	client := hcloud.NewClient(hcloud.WithToken(os.Getenv("API_TOKEN")))
 	sshKeys, _, err := client.SSHKey.GetByName(context.Background(), name)
@@ -45,14 +36,17 @@ func deleteKey() {
 }
 
 func main() {
+	// flag things
 	delKey := flag.Bool("d", false, "delete a key")
 	crtKey := flag.Bool("c", false, "create a key")
 	flag.Parse()
 	switch {
 	case *delKey && !*crtKey:
-		deleteKey()
+		deleteKey(os.Args[2])
 	case *crtKey && !*delKey:
-		createKey()
+		name := os.Args[2]
+		PublicKey := os.Args[3]
+		createKey(name, PublicKey)
 	default:
 		fmt.Println("Please enter the mode exactly once. You entered delete:%v create:%v", crtKey, delKey)
 	}
