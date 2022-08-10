@@ -37,8 +37,8 @@ func deleteKey(name string) {
 
 func main() {
 	// flag things
-	delKey := flag.Bool("d", false, "delete a key")
-	crtKey := flag.Bool("c", false, "create a key")
+	delKey := flag.Bool("deletesshkey", false, "delete a key")
+	crtKey := flag.Bool("createsshkey", false, "create a key")
 	flag.Parse()
 	switch {
 	case *delKey && !*crtKey:
@@ -48,6 +48,6 @@ func main() {
 		PublicKey := os.Args[3]
 		createKey(name, PublicKey)
 	default:
-		fmt.Println("Please enter the mode exactly once. You entered delete:%v create:%v", crtKey, delKey)
+		fmt.Printf("Please enter the mode exactly once. You entered delete:%v create:%v\n", *crtKey, *delKey)
 	}
 }
