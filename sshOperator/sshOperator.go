@@ -10,12 +10,6 @@ import (
 	"github.com/hetznercloud/hcloud-go/hcloud"
 )
 
-func createServer() {
-	client := hcloud.NewClient(hcloud.WithToken(os.Getenv("API_TOKEN")))
-	// https://pkg.go.dev/github.com/hetznercloud/hcloud-go/hcloud?utm_source=godoc#Server
-
-}
-
 func createKey(name, publicKey string) {
 	labels := make(map[string]string)
 	client := hcloud.NewClient(hcloud.WithToken(os.Getenv("API_TOKEN")))
