@@ -10,7 +10,7 @@ import (
 	"github.com/hetznercloud/hcloud-go/hcloud"
 )
 
-func createServer(name string, locationIDOrName string, serverTypeName string, imageNameOrID string) {
+func createServer(name string, locationIDOrName string, serverTypeName string, imageID int) {
 	//name string, image *hcloud.Image, sizing float32
 	// Location, Image, Type, Volume(has to be created, sizing can be determined there), Networking (IPv4, IPv6, private), firewalls, additional features, ssh-key, name
 	// https://pkg.go.dev/github.com/hetznercloud/hcloud-go/hcloud?utm_source=godoc#Server
@@ -20,7 +20,7 @@ func createServer(name string, locationIDOrName string, serverTypeName string, i
 	serverOpts := hcloud.ServerCreateOpts{Name: name}
 	serverOpts.Location, _, _ = client.Location.Get(context.Background(), locationIDOrName)
 	serverOpts.ServerType, _, _ = client.ServerType.GetByName(context.Background(), serverTypeName)
-	serverOpts.Image, _, _ = client.Image.Get(context.Background(), imageNameOrID)
+	serverOpts.Image, _, _ = client.Image.GetByID(context.Background(), imageID)
 	err := serverOpts.Validate()
 	if err != nil {
 		fmt.Printf("%v\n", err)
@@ -73,7 +73,7 @@ func main() {
 		PublicKey := os.Args[3]
 		createKey(name, PublicKey)
 	case *serv:
-		createServer("abc", "nbg1", "cx11", "ubuntu-2gb-nbg1-4-1660221942")
+		createServer("abc", "nbg1", "cx11", 79028095)
 	default:
 		fmt.Printf("Please enter the mode exactly once. You entered delete:%v create:%v\n", *crtKey, *delKey)
 	}
