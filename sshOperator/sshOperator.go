@@ -11,12 +11,16 @@ import (
 )
 
 func createServer(name string, locationIDOrName string, serverTypeName string, imageNameOrID string) {
-	//name string, image *hcloud.Image, sizing float32
 	// Location, Image, Type, Volume(has to be created, sizing can be determined there), Networking (IPv4, IPv6, private), firewalls, additional features, ssh-key, name
 	// https://pkg.go.dev/github.com/hetznercloud/hcloud-go/hcloud?utm_source=godoc#Server
 	// https://docs.hetzner.com/cloud/general/locations/
 
+	// create the PublicKey in Golang? https://gist.github.com/devinodaniel/8f9b8a4f31573f428f29ec0e884e6673
+	// unique pair of SSHkey and Server, thus new SSHKey for every server
+
+	// possible Sizing approach: if the standard Size of the serverType is smaller than the required size, create a volume with the smallest available size and link it
 	client := hcloud.NewClient(hcloud.WithToken(os.Getenv("API_TOKEN")))
+	// setting up server options
 	serverOpts := hcloud.ServerCreateOpts{Name: name}
 	serverOpts.Location, _, _ = client.Location.Get(context.Background(), locationIDOrName)
 	serverOpts.ServerType, _, _ = client.ServerType.GetByName(context.Background(), serverTypeName)
@@ -27,7 +31,6 @@ func createServer(name string, locationIDOrName string, serverTypeName string, i
 	if err != nil {
 		fmt.Printf("%v\n", err)
 	}
-
 	result, _, err := client.Server.Create(context.Background(), serverOpts)
 	if err != nil {
 		fmt.Printf("%v", err)
