@@ -21,9 +21,6 @@ func createServer(name string, locationIDOrName string, serverTypeName string, i
 	serverOpts.Location, _, _ = client.Location.Get(context.Background(), locationIDOrName)
 	serverOpts.ServerType, _, _ = client.ServerType.GetByName(context.Background(), serverTypeName)
 	serverOpts.Image, _, _ = client.Image.Get(context.Background(), imageNameOrID)
-	//serverOpts.Datacenter, _, _ = client.Datacenter.Get(context.Background(), "nbg1-dc3")
-	fmt.Println(serverOpts.Datacenter)
-	fmt.Println(client.Image.Get(context.Background(), imageNameOrID))
 	err := serverOpts.Validate()
 	if err != nil {
 		fmt.Printf("%v\n", err)
