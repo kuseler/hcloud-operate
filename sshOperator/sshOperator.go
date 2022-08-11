@@ -28,12 +28,11 @@ func createServer(name string, locationIDOrName string, serverTypeName string, i
 		fmt.Printf("%v\n", err)
 	}
 
-	/*
-		result, _, err := client.Server.Create(context.Background(), serverOpts)
-		if err != nil {
-			fmt.Printf("%v", err)
-		}
-		fmt.Println(result)*/
+	result, _, err := client.Server.Create(context.Background(), serverOpts)
+	if err != nil {
+		fmt.Printf("%v", err)
+	}
+	fmt.Println(result)
 }
 
 func createKey(name, publicKey string) {
