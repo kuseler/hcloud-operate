@@ -10,26 +10,22 @@ import (
 	"github.com/hetznercloud/hcloud-go/hcloud"
 )
 
-func createServer(name string, locationIDOrName string, serverTypeName string, imageNameOrID string) {
-	// Location, Image, Type, Volume(has to be created, sizing can be determined there), Networking (IPv4, IPv6, private), firewalls, additional features, ssh-key, name
-	// https://pkg.go.dev/github.com/hetznercloud/hcloud-go/hcloud?utm_source=godoc#Server
-	// https://docs.hetzner.com/cloud/general/locations/
-
-	// create the PublicKey in Golang? https://gist.github.com/devinodaniel/8f9b8a4f31573f428f29ec0e884e6673
+func createServer(name string, locationIDOrName string, serverTypeName string, imageNameOrID string, publicKey string) {
 	// unique pair of SSHkey and Server, thus new SSHKey for every server
-
-	// possible Sizing approach: if the standard Size of the serverType is smaller than the required size, create a volume with the smallest available size and link it
 	client := hcloud.NewClient(hcloud.WithToken(os.Getenv("API_TOKEN")))
 	// setting up server options
 	serverOpts := hcloud.ServerCreateOpts{Name: name}
 	serverOpts.Location, _, _ = client.Location.Get(context.Background(), locationIDOrName)
-	serverOpts.ServerType, _, _ = client.ServerType.GetByName(context.Background(), serverTypeName)
+	serverOpts.ServerType, _, _ = client.ServerType.Get(context.Background(), serverTypeName)
 	serverOpts.Image, _, _ = client.Image.Get(context.Background(), imageNameOrID)
+	createKey(name+"-publicKey", publicKey)
+	publicKeySSH, _, _ := client.SSHKey.Get(context.Background(), name+"-publicKey")
+	serverOpts.SSHKeys = append(serverOpts.SSHKeys, publicKeySSH)
+	// validation of server options
 	err := serverOpts.Validate()
-	fmt.Printf("name: %v\n", serverOpts.Image)
-
 	if err != nil {
-		fmt.Printf("%v\n", err)
+		fmt.Printf("Error during validation: %v\n", err)
+		return
 	}
 	result, _, err := client.Server.Create(context.Background(), serverOpts)
 	if err != nil {
@@ -38,20 +34,27 @@ func createServer(name string, locationIDOrName string, serverTypeName string, i
 	fmt.Println(result)
 }
 
+func deleteServer(NameOrID string) {
+	client := hcloud.NewClient(hcloud.WithToken(os.Getenv("API_TOKEN")))
+	serverToBeDeleted := client.Server.Get(NameOrID)
+	publicKeyToBeDeleted := serverToBeDeleted
+	client.Server.Delete(context.Background(), serverToBeDeleted)
+	client.SSHKey.Delete()
+}
+
 func createKey(name, publicKey string) {
 	labels := make(map[string]string)
 	client := hcloud.NewClient(hcloud.WithToken(os.Getenv("API_TOKEN")))
 	SSHKeyCreateOpts := hcloud.SSHKeyCreateOpts{Name: name, PublicKey: publicKey, Labels: labels}
 	SSHKey, _, error := client.SSHKey.Create(context.Background(), SSHKeyCreateOpts) //create SSHKey
 	if error != nil {
-		fmt.Printf("%v", error) //Print out SSHKey
+		fmt.Printf("Error while creating sshKey: %v", error) //Print out SSHKey
 	}
 	fmt.Printf("%v\n", SSHKey)
 
 }
 
 func deleteKey(name string) {
-	fmt.Printf("Api Key: '%s', name: '%s'\n", os.Getenv("API_TOKEN"), name)
 	client := hcloud.NewClient(hcloud.WithToken(os.Getenv("API_TOKEN")))
 	sshKeys, _, err := client.SSHKey.GetByName(context.Background(), name)
 	switch {
@@ -78,7 +81,7 @@ func main() {
 		PublicKey := os.Args[3]
 		createKey(name, PublicKey)
 	case *serv:
-		createServer("abc", "nbg1", "cx11", "79028095")
+		createServer("abc", "nbg1", "cx11", "79028095", "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQC1ORh6h8PpZ57zzx0rYBS/WjRu7ObAws6dSN+xQ5zcC1VZo2H/yJdcuyUU8HObkRZHRBTaMEbh3W3nnWj1PggeO7BQxUsLhtuSneI8FvIodbmYsyvAigReyv5pxfj9N0o06oCvkDP/kFTgidcAt1kUvBcSQfT97KltGYo4i+zVt6U+YCaeHOZTz7R11tHaOeh7b7A4z2olwcrhrfzq+s55WumvH0sM+Ohfh6Xo0FYgoO/G4XCLeymdYPbAA1JU96qarHF0sFBTv0zdCNl/grK2im4D4giSCjsYdxU9xFYLgsj8QIBZeAvQ7RSZTtlgh1IKsBvuQHBTwOzlVsb3YzJFVOI053TnMinhrJjJCtIWJYpVCW6QNNkMnCtiU+SAD0PKdX0uFF4Gy5/9K2m4PfPgyvtrjusPEGgkt3+BeKgbZHhoX8efktVBaj/aph0PUum3VkSPfBbduISsypl2cXCIOeTshBg3zPQxptK9qepMF1DY8JkRgQNSjcjPWy0MrLlAaG/UiUvgeFXhr6Hi5paIZ9bzSv1V66MNHvlxW3HXj4LtQjbZnDFfLo/pK+fMjSwW4ZDewgvYPrevMFvxEansEPbAIPvd0SYCjbRyOdSRH7hNH1bOapxiSZTD1Ja1P4umbRe1RXyRBgx02T7sAKvqJkUqpkgwDbowi6TxdTEXuQ== kimi@kimiarch")
 	default:
 		fmt.Printf("Please enter the mode exactly once. You entered delete:%v create:%v\n", *crtKey, *delKey)
 	}
