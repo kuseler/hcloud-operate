@@ -1,0 +1,6 @@
+#cloud-config
+runcmd:
+  - curl -fsSL https://get.docker.com | sh
+  - apt-get install zsh
+  - apt-get update
+  - apt-get upgrade
