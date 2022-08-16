@@ -18,7 +18,7 @@ import (
 	"github.com/hetznercloud/hcloud-go/hcloud"
 )
 
-func do_keyscan(ip string) {
+func doKeyscan(ip string) {
 	//ssh-keyscan -t rsa github.com >> ~/.ssh/known_hosts;
 	app := "ssh-keyscan"
 	arg1 := "-t"
@@ -26,8 +26,8 @@ func do_keyscan(ip string) {
 	arg3 := ip
 	cmd := exec.Command(app, arg1, arg2, arg3)
 	output, err := cmd.CombinedOutput()
-	out := strings.Fields(string(output))
-	fmt.Printf("output: %v", out)
+	out := strings.Split(string(output), "\n")
+	fmt.Println(out[1])
 	if err != nil {
 		fmt.Println(fmt.Sprint(err) + ": " + string(output))
 		return
@@ -38,7 +38,7 @@ func do_keyscan(ip string) {
 		fmt.Println(err)
 	}
 	defer f.Close()
-	if _, err = f.WriteString(strings.Join(out[len(out)-3:], " ")); err != nil {
+	if _, err = f.WriteString(out[1] + "\n"); err != nil {
 		panic(err)
 	}
 }
@@ -60,7 +60,7 @@ func raw_connect(host string, port string) {
 
 func doconn(ip string) {
 	raw_connect(ip, "22")
-	do_keyscan(ip)
+	doKeyscan(ip)
 	hostKeyCallback, err := knownhosts.New("/home/kimi/.ssh/known_hosts")
 	if err != nil {
 		fmt.Println("hostkeyerror: ", err)
