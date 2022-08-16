@@ -19,9 +19,7 @@ func createServer(name string, locationIDOrName string, serverTypeName string, i
 	serverOpts.Location, _, _ = client.Location.Get(context.Background(), locationIDOrName)
 	serverOpts.ServerType, _, _ = client.ServerType.Get(context.Background(), serverTypeName)
 	serverOpts.Image, _, _ = client.Image.Get(context.Background(), imageNameOrID)
-	if userdata != "" {
-		serverOpts.UserData = userdata
-	}
+	serverOpts.UserData = userdata
 	// validation of server options
 	err := serverOpts.Validate()
 	if err != nil {
