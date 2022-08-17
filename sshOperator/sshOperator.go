@@ -2,6 +2,7 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"flag"
 	"fmt"
@@ -9,47 +10,33 @@ import (
 	"net"
 	"os"
 	"os/exec"
-	"strings"
 	"time"
 
 	"golang.org/x/crypto/ssh"
-	"golang.org/x/crypto/ssh/knownhosts"
 
 	"github.com/hetznercloud/hcloud-go/hcloud"
 )
 
 func doKeyscan(ip string) {
 	//ssh-keyscan -t rsa github.com >> ~/.ssh/known_hosts;
-	app := "ssh-keyscan"
-	arg1 := "-t"
-	arg2 := "rsa"
-	arg3 := ip
-	cmd := exec.Command(app, arg1, arg2, arg3)
-	output, err := cmd.CombinedOutput()
-	out := strings.Split(string(output), "\n")
-	fmt.Println(out[1])
+	cmd := exec.Command("./editKnownHosts", ip)
+	var out bytes.Buffer
+	var stderr bytes.Buffer
+	cmd.Stdout = &out
+	cmd.Stderr = &stderr
+	err := cmd.Run()
 	if err != nil {
-		fmt.Println(fmt.Sprint(err) + ": " + string(output))
+		fmt.Println(fmt.Sprint(err) + ": " + stderr.String())
 		return
 	}
-	path := "/home/kimi/.ssh/known_hosts"
-	f, err := os.OpenFile(path, os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0644)
-	if err != nil {
-		fmt.Println(err)
-	}
-	defer f.Close()
-	if _, err = f.WriteString(out[1] + "\n"); err != nil {
-		panic(err)
-	}
+	fmt.Println("Result: " + out.String())
 }
 func raw_connect(host string, port string) {
 	timeout := time.Second
 	for {
 		conn, err := net.DialTimeout("tcp", net.JoinHostPort(host, port), timeout)
 		if err != nil {
-			fmt.Println("Connecting error:", err)
 		}
-		fmt.Println(conn)
 		if conn != nil {
 			defer conn.Close()
 			fmt.Println("Opened", net.JoinHostPort(host, port))
@@ -59,57 +46,71 @@ func raw_connect(host string, port string) {
 }
 
 func doconn(ip string) {
-	raw_connect(ip, "22")
-	doKeyscan(ip)
-	hostKeyCallback, err := knownhosts.New("/home/kimi/.ssh/known_hosts")
+	user := "root"
+	command := "cloud-init status"
+	port := "22"
+	//doKeyscan(ip)
+	raw_connect(ip, port)
+
+	// Create the Signer for this private key.
+	/*hostKeyCallback, err := knownhosts.New("/home/kimi/.ssh/known_hosts")
 	if err != nil {
-		fmt.Println("hostkeyerror: ", err)
+		fmt.Println("could not create hostkeycallback function: ", err)
+	}*/
+
+	//key, err := ioutil.ReadFile("/home/kimi/.ssh/id_rsa")
+	config := &ssh.ClientConfig{
+		User: user,
+		Auth: []ssh.AuthMethod{
+			// Add in password check here for moar security.
+			publicKey("/home/kimi/.ssh/id_rsa"),
+		},
+		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
 	}
-	key, err := ioutil.ReadFile("/home/kimi/.ssh/id_rsa")
+	// Connect to the remote server and perform the SSH handshake.
+	client, err := ssh.Dial("tcp", ip+":"+port, config)
+	if err != nil {
+		fmt.Printf("unable to connect: %v", err)
+	}
+	defer client.Close()
+
+	ss, err := client.NewSession()
+	if err != nil {
+		fmt.Println("unable to create SSH session: ", err)
+	}
+	defer ss.Close()
+	// Creating the buffer which will hold the remotly executed command's output.
+	var stdoutBuf bytes.Buffer
+	ss.Stdout = &stdoutBuf
+	ss.Run(command)
+	for {
+		ss, _ := client.NewSession()
+		ss.Stdout = &stdoutBuf
+		ss.Run(command)
+		if stdoutBuf.String() == "status: done" {
+			fmt.Println("breaking loop...")
+			break
+		}
+		time.Sleep(100 * time.Millisecond)
+		fmt.Println(stdoutBuf.String())
+
+	}
+	// Let's print out the result of command.
+	fmt.Println(stdoutBuf.String())
+}
+
+func publicKey(path string) ssh.AuthMethod {
+	key, err := ioutil.ReadFile(path)
+
+	//	key, err := ioutil.ReadFile("/home/kimi/.ssh/id_rsa")
 	if err != nil {
 		fmt.Printf("unable to read private key: %v", err)
 	}
 	signer, err := ssh.ParsePrivateKey(key)
 	if err != nil {
-		fmt.Printf("unable to parse private key: %v", err)
+		fmt.Println(err)
 	}
-
-	config := &ssh.ClientConfig{
-		User: "root",
-		Auth: []ssh.AuthMethod{
-			// Use the PublicKeys method for remote authentication.
-			ssh.PublicKeys(signer),
-		},
-		HostKeyCallback: hostKeyCallback,
-	}
-
-	config.SetDefaults()
-	for {
-		for {
-			_, err := ssh.Dial("tcp", ip+":22", config)
-			time.Sleep(100 * time.Millisecond)
-			if err != nil {
-				break
-			}
-		}
-		client, err := ssh.Dial("tcp", ip+":22", config)
-		if err != nil {
-			fmt.Println(err)
-			continue
-		}
-		defer client.Close()
-		session, _ := client.NewSession()
-		answer, err := session.Output("docker version")
-		if err != nil {
-			fmt.Println(err)
-		}
-
-		fmt.Println(answer)
-		if answer != nil {
-			break
-		}
-
-	}
+	return ssh.PublicKeys(signer)
 }
 
 func createServer(name string, locationIDOrName string, serverTypeName string, imageNameOrID string, userdata string, publicKey string) {
