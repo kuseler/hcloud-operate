@@ -1,0 +1,2 @@
+#!/bin/sh
+ssh-keyscan -t rsa $1 >> /home/kimi/.ssh/known_hosts

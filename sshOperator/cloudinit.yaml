@@ -1,7 +1,6 @@
 #cloud-config
-apt_upgrade: true
-apt_update: true
 packages: 
  - zsh
 runcmd:
   - curl -fsSL https://get.docker.com | sh
+package_reboot_if_required: true

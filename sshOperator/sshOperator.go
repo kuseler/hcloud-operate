@@ -10,6 +10,7 @@ import (
 	"net"
 	"os"
 	"os/exec"
+	"strings"
 	"time"
 
 	"golang.org/x/crypto/ssh"
@@ -87,16 +88,13 @@ func doconn(ip string) {
 		ss, _ := client.NewSession()
 		ss.Stdout = &stdoutBuf
 		ss.Run(command)
-		if stdoutBuf.String() == "status: done" {
+		if strings.Contains(stdoutBuf.String(), "done") {
 			fmt.Println("breaking loop...")
 			break
 		}
 		time.Sleep(100 * time.Millisecond)
-		fmt.Println(stdoutBuf.String())
-
 	}
 	// Let's print out the result of command.
-	fmt.Println(stdoutBuf.String())
 }
 
 func publicKey(path string) ssh.AuthMethod {
@@ -138,6 +136,8 @@ func createServer(name string, locationIDOrName string, serverTypeName string, i
 	result, _, err := client.Server.Create(context.Background(), serverOpts)
 	if err != nil {
 		fmt.Printf("Error during creation: %v", err)
+	}
+	if false {
 		fmt.Println(result)
 	}
 	for {
@@ -147,7 +147,7 @@ func createServer(name string, locationIDOrName string, serverTypeName string, i
 			fmt.Println("breaking loop", server.Status)
 		}
 		time.Sleep(10 * time.Millisecond)
-		fmt.Println(server.PublicNet.IPv4)
+		//fmt.Println(server.PublicNet.IPv4)
 
 	}
 	server, _, _ := client.Server.Get(context.Background(), "abc")
@@ -157,11 +157,10 @@ func createServer(name string, locationIDOrName string, serverTypeName string, i
 func testCreationTime() {
 	start := time.Now()
 	cloudconfig, _ := ioutil.ReadFile("cloudinit.yaml")
-	fmt.Println(cloudconfig)
 	createServer("abc", "flk1", "cx11", "ubuntu-20.04", string(cloudconfig), "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQC1ORh6h8PpZ57zzx0rYBS/WjRu7ObAws6dSN+xQ5zcC1VZo2H/yJdcuyUU8HObkRZHRBTaMEbh3W3nnWj1PggeO7BQxUsLhtuSneI8FvIodbmYsyvAigReyv5pxfj9N0o06oCvkDP/kFTgidcAt1kUvBcSQfT97KltGYo4i+zVt6U+YCaeHOZTz7R11tHaOeh7b7A4z2olwcrhrfzq+s55WumvH0sM+Ohfh6Xo0FYgoO/G4XCLeymdYPbAA1JU96qarHF0sFBTv0zdCNl/grK2im4D4giSCjsYdxU9xFYLgsj8QIBZeAvQ7RSZTtlgh1IKsBvuQHBTwOzlVsb3YzJFVOI053TnMinhrJjJCtIWJYpVCW6QNNkMnCtiU+SAD0PKdX0uFF4Gy5/9K2m4PfPgyvtrjusPEGgkt3+BeKgbZHhoX8efktVBaj/aph0PUum3VkSPfBbduISsypl2cXCIOeTshBg3zPQxptK9qepMF1DY8JkRgQNSjcjPWy0MrLlAaG/UiUvgeFXhr6Hi5paIZ9bzSv1V66MNHvlxW3HXj4LtQjbZnDFfLo/pK+fMjSwW4ZDewgvYPrevMFvxEansEPbAIPvd0SYCjbRyOdSRH7hNH1bOapxiSZTD1Ja1P4umbRe1RXyRBgx02T7sAKvqJkUqpkgwDbowi6TxdTEXuQ== kimi@kimiarch")
 	elapsed := time.Since(start)
 	fmt.Printf("Creation of Server took %s\n", elapsed)
-	//deleteServer("abc")
+	deleteServer("abc")
 
 }
 
