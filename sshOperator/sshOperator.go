@@ -11,7 +11,7 @@ import (
 	"github.com/hetznercloud/hcloud-go/hcloud"
 )
 
-func createServer(name string, locationIDOrName string, serverTypeName string, imageNameOrID string, userdata string, publicKey string) {
+func createServer(name, locationIDOrName, serverTypeName, imageNameOrID, userdata, publicKey string) {
 	// unique pair of SSHkey and Server, thus new SSHKey for every server
 	client := hcloud.NewClient(hcloud.WithToken(os.Getenv("API_TOKEN")))
 	// setting up server options
@@ -40,7 +40,7 @@ func createServer(name string, locationIDOrName string, serverTypeName string, i
 
 func testCreationTime() {
 	start := time.Now()
-	createServer("abc", "flk1", "cx11", "ubuntu-20.04", "", "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQC1ORh6h8PpZ57zzx0rYBS/WjRu7ObAws6dSN+xQ5zcC1VZo2H/yJdcuyUU8HObkRZHRBTaMEbh3W3nnWj1PggeO7BQxUsLhtuSneI8FvIodbmYsyvAigReyv5pxfj9N0o06oCvkDP/kFTgidcAt1kUvBcSQfT97KltGYo4i+zVt6U+YCaeHOZTz7R11tHaOeh7b7A4z2olwcrhrfzq+s55WumvH0sM+Ohfh6Xo0FYgoO/G4XCLeymdYPbAA1JU96qarHF0sFBTv0zdCNl/grK2im4D4giSCjsYdxU9xFYLgsj8QIBZeAvQ7RSZTtlgh1IKsBvuQHBTwOzlVsb3YzJFVOI053TnMinhrJjJCtIWJYpVCW6QNNkMnCtiU+SAD0PKdX0uFF4Gy5/9K2m4PfPgyvtrjusPEGgkt3+BeKgbZHhoX8efktVBaj/aph0PUum3VkSPfBbduISsypl2cXCIOeTshBg3zPQxptK9qepMF1DY8JkRgQNSjcjPWy0MrLlAaG/UiUvgeFXhr6Hi5paIZ9bzSv1V66MNHvlxW3HXj4LtQjbZnDFfLo/pK+fMjSwW4ZDewgvYPrevMFvxEansEPbAIPvd0SYCjbRyOdSRH7hNH1bOapxiSZTD1Ja1P4umbRe1RXyRBgx02T7sAKvqJkUqpkgwDbowi6TxdTEXuQ== kimi@kimiarch")
+	createServer("abc", "flk1", "cx11", "ubuntu-20.04", "", "publickey")
 	elapsed := time.Since(start)
 	fmt.Printf("Creation of Server took %s", elapsed)
 	//deleteServer("abc")
